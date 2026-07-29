@@ -21,3 +21,9 @@ Route::delete('/todo/{id}', [App\Http\Controllers\TaskController::class, 'destro
 Route::get('/todo/{id}/edit', [App\Http\Controllers\TaskController::class, 'edit']);
 Route::put('/todo/{id}', [App\Http\Controllers\TaskController::class, 'update']);
 
+// ▼ ToDoアプリ用のログイン・登録機能のルート
+Route::get('/todo/login', [App\Http\Controllers\TodoAuthController::class, 'index']);
+Route::post('/todo/register', [App\Http\Controllers\TodoAuthController::class, 'register']);
+Route::post('/todo/sign_in', [App\Http\Controllers\TodoAuthController::class, 'sign_in']);
+Route::get('/todo/unregister', [App\Http\Controllers\TodoAuthController::class, 'unregister']);
+Route::post('/todo/delete_account', [\App\Http\Controllers\TodoAuthController::class, 'delete_account']);

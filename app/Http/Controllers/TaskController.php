@@ -3,36 +3,49 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Task;//このコントローラ（TaskController）の中で、先ほど app フォルダ直下に作成した Task モデルを使用するための宣言。この1行がないと、プログラムが Task を見つけられずエラーになってしまう。
 
 class TaskController extends Controller
 {
-    // ★ここから下の数行を追加します
-    public function index()
+   
+public function index(Request $request)
+
     {
-        // データベースからすべてのタスクデータを取得して、変数 $tasks に入れる
-        $tasks = Task::all();
-        return view('todo.index', ['tasks' => $tasks]);
-        //$tasksをtodo.indexにおいて呼び出すためのキーを'tasks'として設定している
+        // 1. セッションからログイン中のユーザーの固有番号（id）を取得
+        $loginId = $request->session()->get("login_id");
+
+        // 2. ログイン中のユーザーのレコードをデータベースから取得して、ID文字列を取り出す
+        $userRecord = DB::connection('mysql')->select("select * from users where id = " . $loginId);
+        $loginIdStr = $userRecord[0]->id_str; // ログインしているユーザーの文字列ID（例: test_user）
+
+        // 3. そのユーザーのタスクだけを取得
+        $tasks = DB::connection('mysql')->select("select * from tasks where user_id = " . $loginId);
+
+        // 4. ビューに渡す配列の中に、ログインIDの文字列も含める
+        $variables = [
+            "tasks" => $tasks,
+            "loginIdStr" => $loginIdStr,
+        ];
+
+        return view("todo.index", compact("variables"));
     }
+
     // 以下は、入力フォームから入力されて\TaskにPOST通信されてきたときにデータを格納するための処理
     public function store(Request $request)
     {
-        $request->validate([
-        'title' => 'required', // 'title' は必須（required）という意味
-        ]);
+        // 1. セッションから現在ログインしているユーザーのIDを取り出す
+        $loginId = $request->session()->get("login_id");
 
-    // 1. 新しいタスクのモデル（設計図）のインスタンスを作る
-        $task = new Task;
+        // 2. 画面から送られてきたタスクのタイトルを取り出す
+        $title = $request->input("title");
 
-        // 2. フォームから送られてきた 'title' の中身を、モデルの title に代入する
-        $task->title = $request->title;
+        // 3. tasksテーブルに、タイトルとユーザーIDをセットで保存する
+        DB::connection("mysql")->insert(
+            "insert into tasks (title, user_id) values ('" . $title . "', " . $loginId . ")"
+        );
 
-        // 3. データベースに保存する
-        $task->save();
-
-        // 4. 保存が終わったら、元の画面（ /todo ）にもどる（リダイレクトする）
-        return redirect('/todo');
+        return redirect("/todo");
     }
 
     public function destroy($id)
