@@ -15,6 +15,11 @@ public function index(Request $request)
         // 1. セッションからログイン中のユーザーの固有番号（id）を取得
         $loginId = $request->session()->get("login_id");
 
+        //もしログインしていなかったら（IDが空だったら）、ログイン画面へリダイレクトする
+        if (!$loginId) {
+        return redirect('/todo/login'); // ログイン画面へリダイレクト
+        }
+
         // 2. ログイン中のユーザーのレコードをデータベースから取得して、ID文字列を取り出す
         $userRecord = DB::connection('mysql')->select("select * from users where id = " . $loginId);
         $loginIdStr = $userRecord[0]->id_str; // ログインしているユーザーの文字列ID（例: test_user）
